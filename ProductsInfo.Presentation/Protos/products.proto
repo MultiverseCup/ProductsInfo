@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+option csharp_namespace = "ProductsInfo.Presentation.Protos";
+
+package products;
+
+enum ProductType {
+    PRODUCT_TYPE_UNSPECIFIED = 0;
+    GENERAL = 1;
+    HOUSEHOLD_CHEMICALS = 2;
+    ELECTRONICS = 3;
+    FOOD = 4;
+}
+
+service Products {
+    rpc CreateProduct (CreateProductRequest)
+        returns (CreateProductResponse);
+
+    rpc GetProducts (GetProductsRequest)
+        returns (GetProductsResponse);
+
+    rpc GetProductById (GetProductByIdRequest)
+        returns (ProductMessage);
+}
+
+message CreateProductRequest {
+    string name = 1;
+    string price = 2;
+    string weight = 3;
+    ProductType type = 4;
+    int32 warehouse_number = 5;
+}
+
+message CreateProductResponse {
+    string id = 1;
+}
+
+message GetProductsRequest {
+    optional string created_date = 1;
+    optional ProductType type = 2;
+    optional int32 warehouse_number = 3;
+
+    int32 page = 4;
+    int32 page_size = 5;
+}
+
+message GetProductsResponse {
+    repeated ProductMessage products = 1;
+
+    int32 total_count = 2;
+    int32 page = 3;
+    int32 page_size = 4;
+    int32 total_pages = 5;
+}
+
+message GetProductByIdRequest {
+    string id = 1;
+}
+
+message ProductMessage {
+    string id = 1;
+    string name = 2;
+    string price = 3;
+    string weight = 4;
+    ProductType type = 5;
+    string created_at = 6;
+    int32 warehouse_number = 7;
+}
