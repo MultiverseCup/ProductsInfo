@@ -1,4 +1,5 @@
-﻿using ProductsInfo.Domain.Entities;
+﻿using ProductsInfo.Application.Contracts;
+using ProductsInfo.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,7 +20,13 @@ namespace ProductsInfo.Application.Abstractions
             CancellationToken cancellationToken = default
         );
 
-        Task<IReadOnlyCollection<Product>> GetAllAsync(
+        Task<PagedResult<Product>> GetPagedAsync(
+            ProductFilter filter,
+            CancellationToken cancellationToken = default
+        );
+
+        Task<bool> UpdateAsync(
+            Product product,
             CancellationToken cancellationToken = default
         );
     }

@@ -145,6 +145,50 @@ public sealed class ProductsGrpcService(
         return ToProto(product);
     }
 
+    public override async Task<Proto.UpdateProductResponse> UpdateProduct(
+        Proto.UpdateProductRequest request,
+        ServerCallContext context)
+    {
+        if (!Guid.TryParse(request.Id, out var id))
+        {
+            throw new RpcException(
+                new Status(
+                    StatusCode.InvalidArgument,
+                    "Передан некорректный идентификатор товара."
+                )
+            );
+        }
+
+        var command = new UpdateProductCommand(
+            Id: id,
+            Name: request.Name,
+            Price: ParseDecimal(request.Price, "Цена"),
+            Weight: ParseDecimal(request.Weight, "Вес"),
+            Type: ToDomainType(request.Type),
+            WarehouseNumber: request.WarehouseNumber
+        );
+
+        var updated = await productService.UpdateAsync(
+            command,
+            context.CancellationToken
+        );
+
+        if (!updated)
+        {
+            throw new RpcException(
+                new Status(
+                    StatusCode.NotFound,
+                    $"Товар с Id {id} не найден."
+                )
+            );
+        }
+
+        return new Proto.UpdateProductResponse
+        {
+            Updated = true
+        };
+    }
+
     private static decimal ParseDecimal(
         string value,
         string fieldName)

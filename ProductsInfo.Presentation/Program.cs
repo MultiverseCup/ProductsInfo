@@ -6,6 +6,7 @@ using ProductsInfo.Application.Contracts;
 using ProductsInfo.Application.Services;
 using ProductsInfo.Application.Validators;
 
+using ProductsInfo.Infrastructure;
 using ProductsInfo.Infrastructure.Repositories;
 
 using ProductsInfo.Presentation.Grpc;
@@ -39,14 +40,28 @@ builder.Services.AddScoped<
     CreateProductCommandValidator>();
 
 builder.Services.AddScoped<
-    IValidator<ProductFilter>,
+    IValidator<ProductFilter>,  
     ProductFilterValidator>();
 
-builder.Services.AddSingleton<
-    IProductRepository,
-    InMemoryProductRepository>();
+builder.Services.AddScoped<
+    IValidator<UpdateProductCommand>,
+    UpdateProductCommandValidator>();
+
+//builder.Services.AddSingleton<
+//    IProductRepository,
+//    InMemoryProductRepository>();
+
+var connectionString =
+    builder.Configuration.GetConnectionString("Default")
+    ?? throw new InvalidOperationException(
+        "Строка подключения Default не найдена"
+    );
+
+builder.Services.AddInfrastructure(connectionString);
 
 var app = builder.Build();
+
+app.Services.ApplyMigrations();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 

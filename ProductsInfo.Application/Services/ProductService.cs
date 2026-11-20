@@ -2,19 +2,15 @@
 using ProductsInfo.Application.Abstractions;
 using ProductsInfo.Application.Contracts;
 using ProductsInfo.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ProductsInfo.Application.Services
 {
     public sealed class ProductService(
     IProductRepository repository,
     IValidator<CreateProductCommand> createValidator,
-    IValidator<ProductFilter> filterValidator
-) : IProductService
+    IValidator<ProductFilter> filterValidator,
+    IValidator<UpdateProductCommand> updateValidator
+    ) : IProductService
     {
         public async Task<Guid> CreateAsync(
             CreateProductCommand command,
@@ -35,7 +31,10 @@ namespace ProductsInfo.Application.Services
                 WarehouseNumber: command.WarehouseNumber
             );
 
-            await repository.AddAsync(product, cancellationToken);
+            await repository.AddAsync(
+                product,
+                cancellationToken
+            );
 
             return product.Id;
         }
@@ -49,52 +48,21 @@ namespace ProductsInfo.Application.Services
                 cancellationToken
             );
 
-            var products = await repository.GetAllAsync(cancellationToken);
-
-            if (filter.CreatedDate.HasValue)
-            {
-                products = products
-                    .Where(p => DateOnly.FromDateTime(p.CreatedAt.UtcDateTime)
-                        == filter.CreatedDate.Value)
-                    .ToArray();
-            }
-
-            if (filter.Type.HasValue)
-            {
-                products = products
-                    .Where(p => p.Type == filter.Type.Value)
-                    .ToArray();
-            }
-
-            if (filter.WarehouseNumber.HasValue)
-            {
-                products = products
-                    .Where(p => p.WarehouseNumber == filter.WarehouseNumber.Value)
-                    .ToArray();
-            }
-
-            var sortedProducts = products
-                .OrderByDescending(p => p.CreatedAt)
-                .ToArray();
-
-            var totalCount = sortedProducts.Length;
-
-            var totalPages = (int)Math.Ceiling(
-                totalCount / (double)filter.PageSize
+            var result = await repository.GetPagedAsync(
+                filter,
+                cancellationToken
             );
 
-            var pagedProducts = sortedProducts
-                .Skip((int)((long)filter.Page - 1) * filter.PageSize)
-                .Take(filter.PageSize)
+            var items = result.Items
                 .Select(ToDto)
                 .ToArray();
 
             return new PagedResult<ProductDto>(
-                Items: pagedProducts,
-                Page: filter.Page,
-                PageSize: filter.PageSize,
-                TotalCount: totalCount,
-                TotalPages: totalPages
+                Items: items,
+                Page: result.Page,
+                PageSize: result.PageSize,
+                TotalCount: result.TotalCount,
+                TotalPages: result.TotalPages
             );
         }
 
@@ -107,10 +75,41 @@ namespace ProductsInfo.Application.Services
                 cancellationToken
             );
 
-            if (product is null)
-                return null;
+            return product is null
+                ? null
+                : ToDto(product);
+        }
 
-            return ToDto(product);
+        public async Task<bool> UpdateAsync(
+            UpdateProductCommand command,
+            CancellationToken cancellationToken = default)
+        {
+            await updateValidator.ValidateAndThrowAsync(
+                command,
+                cancellationToken
+            );
+
+            var existingProduct = await repository.GetByIdAsync(
+                command.Id,
+                cancellationToken
+            );
+
+            if (existingProduct is null)
+                return false;
+
+            var updatedProduct = existingProduct with
+            {
+                Name = command.Name.Trim(),
+                Price = command.Price,
+                Weight = command.Weight,
+                Type = command.Type,
+                WarehouseNumber = command.WarehouseNumber
+            };
+
+            return await repository.UpdateAsync(
+                updatedProduct,
+                cancellationToken
+            );
         }
 
         private static ProductDto ToDto(Product product)
