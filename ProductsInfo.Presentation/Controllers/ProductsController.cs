@@ -81,5 +81,40 @@ namespace ProductsInfo.Presentation.Controllers
 
             return Ok(product);
         }
+
+        [HttpPut("{id:guid}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> Update(
+         Guid id,
+        [FromBody] UpdateProductRequest request,
+        CancellationToken cancellationToken)
+        {
+            var command = new UpdateProductCommand(
+                Id: id,
+                Name: request.Name,
+                Price: request.Price,
+                Weight: request.Weight,
+                Type: request.Type,
+                WarehouseNumber: request.WarehouseNumber
+            );
+
+            var updated = await productService.UpdateAsync(
+                command,
+                cancellationToken
+            );
+
+            if (!updated)
+            {
+                return NotFound(new
+                {
+                    Message = $"Товар с Id {id} не найден."
+                });
+            }
+
+            return NoContent();
+        }
+
     }
 }

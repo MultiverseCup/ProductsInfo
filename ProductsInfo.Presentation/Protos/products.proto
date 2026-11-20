@@ -21,6 +21,9 @@ service Products {
 
     rpc GetProductById (GetProductByIdRequest)
         returns (ProductMessage);
+
+    rpc UpdateProduct (UpdateProductRequest)
+        returns (UpdateProductResponse);
 }
 
 message CreateProductRequest {
@@ -65,4 +68,17 @@ message ProductMessage {
     ProductType type = 5;
     string created_at = 6;
     int32 warehouse_number = 7;
+}
+
+message UpdateProductRequest {
+    string id = 1;
+    string name = 2;
+    string price = 3;
+    string weight = 4;
+    ProductType type = 5;
+    int32 warehouse_number = 6;
+}
+
+message UpdateProductResponse {
+    bool updated = 1;
 }

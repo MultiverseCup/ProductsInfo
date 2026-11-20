@@ -23,5 +23,10 @@ namespace ProductsInfo.Application.Abstractions
             Guid id,
             CancellationToken cancellationToken = default
         );
+
+        Task<bool> UpdateAsync(
+            UpdateProductCommand command,
+            CancellationToken cancellationToken = default
+        );
     }
 }
